@@ -10,7 +10,11 @@ import (
 )
 
 func main() {
-	orgPath := os.Getenv("PATH")
+	var msys bool
+	if os.Getenv("MSYSTEM") != "" {
+		msys = true
+	}
+
 	flag.Parse()
 	if flag.NArg() == 0 {
 		log.Fatalf("Usage> %s path\n", filepath.Base(os.Args[0]))
@@ -20,6 +24,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Invalid path specified: %s", flag.Arg(0))
 	}
+
+	orgPath := os.Getenv("PATH")
 	plist := []string{}
 	in := false
 	for _, s := range strings.Split(orgPath, string(os.PathListSeparator)) {
@@ -31,5 +37,20 @@ func main() {
 	if !in {
 		plist = append([]string{path}, plist...)
 	}
-	fmt.Printf("PATH=%s\n", strings.Join(plist, string(os.PathListSeparator)))
+
+	pathListSeparator := string(os.PathListSeparator)
+	// msys2 の / の場所は、 
+	// $ cygpath -w /
+	// の出力で調べられる
+	if msys {
+		for i, p := range(plist) {
+			p = filepath.ToSlash(p)
+			vol := filepath.VolumeName(p)
+			p = strings.Replace(p, vol, "", 1)
+			vol = "/" + strings.Replace(vol, ":", "", 1)
+			plist[i] = vol + p
+		}
+		pathListSeparator = ":"
+	}
+	fmt.Printf("PATH=%s\n", strings.Join(plist, pathListSeparator))
 }
