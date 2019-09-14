@@ -5,52 +5,74 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
 
 func main() {
 	var msys bool
-	if os.Getenv("MSYSTEM") != "" {
-		msys = true
-	}
-
+	msys, msysRoot := InMsys2()
 	flag.Parse()
-	if flag.NArg() == 0 {
-		log.Fatalf("Usage> %s path\n", filepath.Base(os.Args[0]))
+	if flag.NArg() <= 1 {
+		log.Fatalf("Usage> %s PATHENV dir\n", filepath.Base(os.Args[0]))
 	}
-
-	path, err := filepath.Abs(flag.Arg(0))
+	pathenv := flag.Arg(0)
+	dir, err := filepath.Abs(flag.Arg(1))
 	if err != nil {
 		log.Fatalf("Invalid path specified: %s", flag.Arg(0))
 	}
 
-	orgPath := os.Getenv("PATH")
+	orgPath := os.Getenv(pathenv)
 	plist := []string{}
 	in := false
 	for _, s := range strings.Split(orgPath, string(os.PathListSeparator)) {
 		plist = append(plist, s)
-		if s == path {
+		if s == dir {
 			in = true
 		}
 	}
 	if !in {
-		plist = append([]string{path}, plist...)
+		plist = append([]string{dir}, plist...)
 	}
 
 	pathListSeparator := string(os.PathListSeparator)
-	// msys2 の / の場所は、 
+	// msys2 の / の場所は、
 	// $ cygpath -w /
 	// の出力で調べられる
 	if msys {
-		for i, p := range(plist) {
-			p = filepath.ToSlash(p)
-			vol := filepath.VolumeName(p)
-			p = strings.Replace(p, vol, "", 1)
-			vol = "/" + strings.Replace(vol, ":", "", 1)
-			plist[i] = vol + p
+		for i, p := range plist {
+			p = msysPath(p)
+			if strings.HasPrefix(p, msysRoot) {
+				p = strings.Replace(p, msysRoot, "", 1)
+			}
+			plist[i] = p
 		}
 		pathListSeparator = ":"
 	}
 	fmt.Printf("PATH=%s\n", strings.Join(plist, pathListSeparator))
+}
+
+func InMsys2() (msys bool, msysRoot string) {
+	if os.Getenv("MSYSTEM") != "" {
+		msys = true
+	}
+	if msys {
+		out, err := exec.Command("cygpath", "-w", "/").Output()
+		if err != nil {
+			log.Fatalf("T62: %v", err)
+		}
+		msysRoot = strings.Replace(string(out), "\n", "", 1)
+		msysRoot = strings.Replace(msysRoot, "\r", "", 1)
+		msysRoot = filepath.ToSlash(filepath.Clean(msysRoot))
+	}
+	return msys, msysPath(msysRoot)
+}
+
+func msysPath(p string) string {
+	p = filepath.ToSlash(p)
+	vol := filepath.VolumeName(p)
+	p = strings.Replace(p, vol, "", 1)
+	vol = "/" + strings.Replace(vol, ":", "", 1)
+	return vol + p
 }

@@ -1,3 +1,3 @@
 # pathmunge
 
-$ eval $(go run pathmunge.go DIR)
+$ eval $(go run pathmunge.go PATH DIR)
