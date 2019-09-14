@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 )
-
+// Produce PATH environment assignment string
 func main() {
 	var msys bool
 	msys, msysRoot := InMsys2()
@@ -53,6 +53,7 @@ func main() {
 	fmt.Printf("PATH=%s\n", strings.Join(plist, pathListSeparator))
 }
 
+// Is it in msys2 environment
 func InMsys2() (msys bool, msysRoot string) {
 	if os.Getenv("MSYSTEM") != "" {
 		msys = true
@@ -69,6 +70,7 @@ func InMsys2() (msys bool, msysRoot string) {
 	return msys, msysPath(msysRoot)
 }
 
+// convert C:/ to /C/
 func msysPath(p string) string {
 	p = filepath.ToSlash(p)
 	vol := filepath.VolumeName(p)
