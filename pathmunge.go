@@ -50,7 +50,7 @@ func main() {
 		}
 		pathListSeparator = ":"
 	}
-	fmt.Printf("PATH=%s\n", strings.Join(plist, pathListSeparator))
+	fmt.Printf("%s=%s\n", pathenv, strings.Join(plist, pathListSeparator))
 }
 
 // Is it in msys2 environment
