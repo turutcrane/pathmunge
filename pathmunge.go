@@ -50,6 +50,9 @@ func main() {
 		}
 		pathListSeparator = ":"
 	}
+	for i, p := range plist {
+		plist[i] = strings.ReplaceAll(p, " ", "\\ ")
+	}
 	fmt.Printf("%s=%s\n", pathenv, strings.Join(plist, pathListSeparator))
 }
 
