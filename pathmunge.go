@@ -13,6 +13,7 @@ import (
 func main() {
 	var msys bool
 	msys, msysRoot := InMsys2()
+	ps := flag.Bool("ps", false, "for Powershell")
 	flag.Parse()
 	if flag.NArg() <= 1 {
 		log.Fatalf("Usage> %s PATHENV dir\n", filepath.Base(os.Args[0]))
@@ -53,7 +54,11 @@ func main() {
 	for i, p := range plist {
 		plist[i] = strings.ReplaceAll(p, " ", "\\ ")
 	}
-	fmt.Printf("%s=%s\n", pathenv, strings.Join(plist, pathListSeparator))
+	if *ps {
+		fmt.Printf("$env:%s=\"%s\"", pathenv, strings.Join(plist, pathListSeparator))
+	} else {
+		fmt.Printf("%s=%s\n", pathenv, strings.Join(plist, pathListSeparator))
+	}
 }
 
 // Is it in msys2 environment
