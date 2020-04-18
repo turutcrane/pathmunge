@@ -11,8 +11,6 @@ import (
 )
 // Produce PATH environment assignment string
 func main() {
-	var msys bool
-	msys, msysRoot := InMsys2()
 	ps := flag.Bool("ps", false, "for Powershell")
 	flag.Parse()
 	if flag.NArg() <= 1 {
@@ -38,9 +36,7 @@ func main() {
 	}
 
 	pathListSeparator := string(os.PathListSeparator)
-	// msys2 の / の場所は、
-	// $ cygpath -w /
-	// の出力で調べられる
+	msys, msysRoot := InMsys2()
 	if msys {
 		for i, p := range plist {
 			p = msysPath(p)
@@ -67,6 +63,9 @@ func InMsys2() (msys bool, msysRoot string) {
 		msys = true
 	}
 	if msys {
+		// msys2 の / の場所は、
+		// $ cygpath -w /
+		// の出力で調べられる
 		out, err := exec.Command("cygpath", "-w", "/").Output()
 		if err != nil {
 			log.Fatalf("T62: %v", err)
