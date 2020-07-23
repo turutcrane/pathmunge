@@ -48,7 +48,9 @@ func main() {
 		pathListSeparator = ":"
 	}
 	for i, p := range plist {
-		plist[i] = strings.ReplaceAll(p, " ", "\\ ")
+		p = strings.ReplaceAll(p, " ", "\\ ")
+		p = strings.ReplaceAll(p, "(", "\\(")
+		plist[i] = strings.ReplaceAll(p, ")", "\\)")
 	}
 	if *ps {
 		fmt.Printf("$env:%s=\"%s\"", pathenv, strings.Join(plist, pathListSeparator))
