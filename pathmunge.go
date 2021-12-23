@@ -9,9 +9,11 @@ import (
 	"path/filepath"
 	"strings"
 )
+
 // Produce PATH environment assignment string
 func main() {
 	ps := flag.Bool("ps", false, "for Powershell")
+	del := flag.Bool("d", false, "delete the dir from path")
 	flag.Parse()
 	if flag.NArg() <= 1 {
 		log.Fatalf("Usage> %s PATHENV dir\n", filepath.Base(os.Args[0]))
@@ -26,12 +28,16 @@ func main() {
 	plist := []string{}
 	in := false
 	for _, s := range strings.Split(orgPath, string(os.PathListSeparator)) {
-		plist = append(plist, s)
+		match := false
+		in = match || in
 		if s == dir {
-			in = true
+			match = true
+		}
+		if !(match && *del) {
+			plist = append(plist, s)
 		}
 	}
-	if !in {
+	if !in && !*del {
 		plist = append([]string{dir}, plist...)
 	}
 
