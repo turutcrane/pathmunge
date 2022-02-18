@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -53,10 +54,12 @@ func main() {
 		}
 		pathListSeparator = ":"
 	}
-	for i, p := range plist {
-		p = strings.ReplaceAll(p, " ", "\\ ")
-		p = strings.ReplaceAll(p, "(", "\\(")
-		plist[i] = strings.ReplaceAll(p, ")", "\\)")
+	if runtime.GOOS != "windows" || msys {
+		for i, p := range plist {
+			p = strings.ReplaceAll(p, " ", "\\ ")
+			p = strings.ReplaceAll(p, "(", "\\(")
+			plist[i] = strings.ReplaceAll(p, ")", "\\)")
+		}
 	}
 	if *ps {
 		fmt.Printf("$env:%s=\"%s\"", pathenv, strings.Join(plist, pathListSeparator))
