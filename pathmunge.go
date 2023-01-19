@@ -28,15 +28,15 @@ func main() {
 	orgPath := os.Getenv(pathenv)
 	plist := []string{}
 	in := false
-	for _, s := range strings.Split(orgPath, string(os.PathListSeparator)) {
+	for _, s := range filepath.SplitList(orgPath) {
 		match := false
-		in = match || in
 		if s == dir {
 			match = true
 		}
 		if !(match && *del) {
 			plist = append(plist, s)
 		}
+		in = match || in
 	}
 	if !in && !*del {
 		plist = append([]string{dir}, plist...)
