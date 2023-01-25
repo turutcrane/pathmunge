@@ -7,15 +7,24 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 )
 
+type optType struct {
+	del, ps, head bool
+} 
+var opt optType
+
+func init() {
+	flag.BoolVar(&opt.ps, "ps", false, "for Powershell")
+	flag.BoolVar(&opt.del, "d", false, "delete the dir from path")
+	flag.BoolVar(&opt.head, "h", false, "add to top of list")
+}
+
 // Produce PATH environment assignment string
 func main() {
-	ps := flag.Bool("ps", false, "for Powershell")
-	del := flag.Bool("d", false, "delete the dir from path")
 	flag.Parse()
+
 	if flag.NArg() <= 1 {
 		log.Fatalf("Usage> %s PATHENV dir\n", filepath.Base(os.Args[0]))
 	}
@@ -26,23 +35,9 @@ func main() {
 	}
 
 	orgPath := os.Getenv(pathenv)
-	plist := []string{}
-	in := false
-	for _, s := range filepath.SplitList(orgPath) {
-		match := false
-		if s == dir {
-			match = true
-		}
-		if !(match && *del) {
-			plist = append(plist, s)
-		}
-		in = match || in
-	}
-	if !in && !*del {
-		plist = append([]string{dir}, plist...)
-	}
+	plist := genList(orgPath, dir, opt)
 
-	pathListSeparator := string(os.PathListSeparator)
+	pathListSeparator := string(filepath.ListSeparator)
 	msys, msysRoot := InMsys2()
 	if msys {
 		for i, p := range plist {
@@ -54,18 +49,27 @@ func main() {
 		}
 		pathListSeparator = ":"
 	}
-	if runtime.GOOS != "windows" || msys {
-		for i, p := range plist {
-			p = strings.ReplaceAll(p, " ", "\\ ")
-			p = strings.ReplaceAll(p, "(", "\\(")
-			plist[i] = strings.ReplaceAll(p, ")", "\\)")
-		}
-	}
-	if *ps {
+
+	if opt.ps {
 		fmt.Printf("$env:%s=\"%s\"", pathenv, strings.Join(plist, pathListSeparator))
 	} else {
-		fmt.Printf("%s=%s\n", pathenv, strings.Join(plist, pathListSeparator))
+		fmt.Printf("%s='%s'\n", pathenv, strings.Join(plist, pathListSeparator))
 	}
+}
+
+func genList(orgPath, dir string, opt optType) []string {
+	plist := []string{}
+	in := map[string]struct{}{}
+	for _, s := range filepath.SplitList(orgPath) {
+		if _, ok := in[s]; !ok && ! (s == dir && (opt.del || opt.head)) {
+				plist = append(plist, s)
+				in[s] = struct{}{}
+		}
+	}
+	if _, ok := in[dir]; !ok && !opt.del {
+		plist = append([]string{dir}, plist...)
+	}
+	return plist
 }
 
 // Is it in msys2 environment
